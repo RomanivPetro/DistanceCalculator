@@ -7,6 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Converters;
+using System.Collections.Generic;
+using System.Globalization;
 
 namespace DistanceCalculator.WebAPI
 {
@@ -24,7 +26,13 @@ namespace DistanceCalculator.WebAPI
         {
             services.AddSingleton<IDistanceCalculatorFactory, DistanceCalculatorFactory>();
             services.AddTransient<IDistanceCalculationService, DistanceCalculationService>();
-            services.AddControllers();
+            services.AddControllers().AddNewtonsoftJson(o =>
+            {
+                o.SerializerSettings.Converters.Add(new StringEnumConverter
+                {
+                    CamelCaseText = true
+                });
+            });
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "DistanceCalculator.WebAPI", Version = "v1" });
@@ -35,6 +43,17 @@ namespace DistanceCalculator.WebAPI
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            var cultures = new List<CultureInfo> {
+                new CultureInfo("uk-UA"),
+                new CultureInfo("en-US")
+            };
+
+            app.UseRequestLocalization(options => {
+                options.DefaultRequestCulture = new Microsoft.AspNetCore.Localization.RequestCulture("uk-UA");
+                options.SupportedCultures = cultures;
+                options.SupportedUICultures = cultures;
+            });
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
